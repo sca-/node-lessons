@@ -20,6 +20,9 @@ app.use(function(req,res,next){
   next();
 });
 
+// статичный контент -- 2
+app.use(express.static('public'));
+
 // passport middleware -- 4
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
