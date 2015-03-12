@@ -1,7 +1,7 @@
 var express = require('express'),   //1
     app = express(),                //1
-    haml = require('haml'),         //2
-    fs = require('fs'),             //2
+    // haml = require('haml'),         //2
+    // fs = require('fs'),             //2
     url = require('url'),           //2
     cookieParser = require('cookie-parser'),  //4
     bodyParser = require('body-parser'),      //4
@@ -11,7 +11,7 @@ var express = require('express'),   //1
 
 // view engine
 app.set('views', './views');        //2
-app.set('view engine', 'haml');     //2
+app.set('view engine', 'jade');     //2
 
 // middleware -- 3
 app.use(function(req,res,next){
@@ -89,9 +89,10 @@ app.get('/some/secret',function(req,res){
 
 app.get('/login', function(req,res){
   var error = req.flash('error');
-  var view = fs.readFileSync('views/login-form.haml', 'utf8');
-  res.setHeader("Content-Type", "text/html; charset=utf8");
-  res.end( haml.render(view, { locals:{ flash: error  }}) );
+  // var view = fs.readFileSync('views/login-form.haml', 'utf8');
+  // res.setHeader("Content-Type", "text/html; charset=utf8");
+  // res.end( haml.render(view, { locals:{ flash: error  }}) );
+  res.render('login-form');
 });
 
 app.post('/login', passport.authenticate('local', { successRedirect: '/',
