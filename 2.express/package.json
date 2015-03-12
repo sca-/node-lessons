@@ -7,7 +7,9 @@
     "fs": "0.0.2",
     "haml": "^0.4.3",
     "jade": "^1.9.2",
+    "orm": "^2.1.22",
     "passport": "^0.2.1",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "sqlite3": "^3.0.5"
   }
 }

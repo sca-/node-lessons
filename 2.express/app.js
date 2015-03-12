@@ -7,7 +7,8 @@ var express = require('express'),   //1
     bodyParser = require('body-parser'),      //4
     passport = require('passport'), //4
     LocalStrategy = require('passport-local').Strategy, //4
-    flash = require('connect-flash'); //4
+    flash = require('connect-flash'), //4
+    orm = require('orm');
 
 // view engine
 app.set('views', './views');        //2
@@ -17,6 +18,22 @@ app.set('view engine', 'jade');     //2
 app.use(function(req,res,next){
   var pathname = url.parse(req.url).pathname;
   console.log("Стучат в " + pathname);
+  next();
+});
+
+// orm middleware -- 5
+app.use(orm.express("sqlite:db.sqlite", {
+    define: function (db, models, next) {
+        models.user = db.define("user", { 
+          username: String,
+          password: String
+        });
+        next();
+    }
+}));
+
+app.use(function(req,res,next){
+  User = req.models.user;
   next();
 });
 
@@ -39,17 +56,23 @@ passport.use(new LocalStrategy({
   },
   function( username, password, done) {
     console.log(username + ' пытается войти');
-    user = { username: 'user', password: 'pass' };
-    if(username == user.username && password == user.password) {
-      console.log(username + ' успешно вошел');
-      return done(null, user);
-    } else if (username == user.username) {
-      console.log(username + ' ввел неверный пароль');
-      return done(null, false, { message: 'Неверный пароль'});
-    } else {
-      console.log(username + ' не найден');
-      return done(null, false, { message: 'Пользователь не найден' });
-    }
+    // user = { username: 'user', password: 'pass' };
+    User.find({ username:username, password:password }, function(err, results) {
+      if(!results || results.length < 1)
+        return done(null, false, { message: 'Неверное имя пользователя или пароль' })
+      else
+        return done(null, results[0]);
+    });
+    // if(username == user.username && password == user.password) {
+    //   console.log(username + ' успешно вошел');
+    //   return done(null, user);
+    // } else if (username == user.username) {
+    //   console.log(username + ' ввел неверный пароль');
+    //   return done(null, false, { message: 'Неверный пароль'});
+    // } else {
+    //   console.log(username + ' не найден');
+    //   return done(null, false, { message: 'Пользователь не найден' });
+    // }
   }
 ));
 
@@ -59,12 +82,41 @@ passport.serializeUser(function(user, done) {
 });
 passport.deserializeUser(function(id, done) {
   console.log('Десериализуем пользователя ' + id);
-  done(null, id == 'user' ? { username: 'user' } : null);
+  User.find({username:id},function(err,results){
+    if(!results || results.length < 1)
+      done(null, null);
+    else
+      done(null, results[0])
+  });
+  //done(null, id == 'user' ? { username: 'user' } : null);
 });
 
 // basic routing -- 1
 app.get('/', function(req,res) {
   res.send('Hello there! <br/> Здесь лежит <a href="/some/secret">некий секрет</a>');
+});
+
+// new user -- 5
+app.get('/register', function(req,res) {
+  res.render('registration-form');
+});
+
+app.post('/register', function(req,res) {
+  res.setHeader("Content-Type", "text/html; charset=utf8");
+  req.models.user.count({username: req.body.username}, function(err,results) {
+    if(results && results > 0) {
+      res.end('Простите, но такой пользователь уже существует');
+    } else {
+      req.models.user.create({ username:req.body.username, password:req.body.password }, function(err, results){
+        if(err) {
+          res.end('Произошла ошибка');
+          console.log(err);
+        }
+        else
+          res.end('Вы успешно зарегистрировались!');
+      });
+    }
+  });
 });
 
 app.get('/name/:name', function(req,res) {
@@ -92,7 +144,7 @@ app.get('/login', function(req,res){
   // var view = fs.readFileSync('views/login-form.haml', 'utf8');
   // res.setHeader("Content-Type", "text/html; charset=utf8");
   // res.end( haml.render(view, { locals:{ flash: error  }}) );
-  res.render('login-form');
+  res.render('login-form', { flash: error });
 });
 
 app.post('/login', passport.authenticate('local', { successRedirect: '/',
