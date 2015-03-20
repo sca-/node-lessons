@@ -6,7 +6,6 @@ head
   script.
     var socket = io.connect('http://localhost:4000');
     socket.on('new_animal', function(data){
-      alert(data.nickname);
     });
 
 body

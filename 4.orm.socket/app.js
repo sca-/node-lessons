@@ -49,7 +49,6 @@ app.get('/new/:name/:nickname/:age/:gender/:food', function(req,res){
       console.log("Ошибка в записи в таблицу");
       res.end("Sorry, an error occured")
     } else {
-      io.emit('new_animal', results);
       res.end("New animal accepted!")
     }
   });
